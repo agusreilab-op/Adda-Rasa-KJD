@@ -21,17 +21,68 @@ export interface ProductStockSummary {
  *     currentStock = Math.max(0, initialStock + sum(IN) + sum(RETUR_IN) - sum(OUT) - sum(RETUR_OUT))
  * - If no transactions exist: currentStock = p.currentStock !== undefined ? p.currentStock : (p.initialStock || 0)
  */
+interface AggregatedTransactionCounts {
+  totalIn: number;
+  totalOut: number;
+  totalReturIn: number;
+  totalReturOut: number;
+  hasTransactions: boolean;
+}
+
+/**
+ * Builds a fast indexed lookup for transactions to avoid O(N*M) nested loops on mobile.
+ */
+export function buildTransactionIndex(transactions: Transaction[] = []) {
+  const byId = new Map<string, AggregatedTransactionCounts>();
+  const byCode = new Map<string, AggregatedTransactionCounts>();
+  const byName = new Map<string, AggregatedTransactionCounts>();
+
+  if (!Array.isArray(transactions) || transactions.length === 0) {
+    return { byId, byCode, byName };
+  }
+
+  for (let i = 0; i < transactions.length; i++) {
+    const t = transactions[i];
+    const qty = Number(t.quantity) || 0;
+    const type = t.type;
+
+    const applyToMap = (map: Map<string, AggregatedTransactionCounts>, key: string) => {
+      let rec = map.get(key);
+      if (!rec) {
+        rec = { totalIn: 0, totalOut: 0, totalReturIn: 0, totalReturOut: 0, hasTransactions: true };
+        map.set(key, rec);
+      }
+      if (type === 'IN') rec.totalIn += qty;
+      else if (type === 'OUT') rec.totalOut += qty;
+      else if (type === 'RETUR_IN') rec.totalReturIn += qty;
+      else if (type === 'RETUR_OUT') rec.totalReturOut += qty;
+    };
+
+    if (t.productId) {
+      applyToMap(byId, t.productId);
+    }
+    if (t.productCode) {
+      applyToMap(byCode, t.productCode.trim().toLowerCase());
+    }
+    if (t.productName) {
+      applyToMap(byName, t.productName.trim().toLowerCase());
+    }
+  }
+
+  return { byId, byCode, byName };
+}
+
+/**
+ * Calculates the accurate real physical stock for a single product.
+ * Supports passing precomputed transaction index for O(1) instantaneous lookup.
+ */
 export function getProductStockSummary(
   product: Product,
-  transactions: Transaction[] = []
+  transactions: Transaction[] = [],
+  precomputedIndex?: ReturnType<typeof buildTransactionIndex>
 ): ProductStockSummary {
   const initialStock = Number(product.initialStock) || 0;
   const minStock = Number(product.minStock) || 0;
-
-  // Match transactions by productId, productCode, or productName
-  const prodCode = (product.code || '').trim().toLowerCase();
-  const prodName = (product.name || '').trim().toLowerCase();
-  const prodId = product.id;
 
   let totalIn = 0;
   let totalOut = 0;
@@ -39,9 +90,27 @@ export function getProductStockSummary(
   let totalReturOut = 0;
   let hasTransactions = false;
 
-  if (Array.isArray(transactions) && transactions.length > 0) {
-    for (const t of transactions) {
-      const matchId = t.productId && t.productId === prodId;
+  const prodCode = (product.code || '').trim().toLowerCase();
+  const prodName = (product.name || '').trim().toLowerCase();
+  const prodId = product.id;
+
+  if (precomputedIndex) {
+    const match =
+      (prodId ? precomputedIndex.byId.get(prodId) : undefined) ||
+      (prodCode ? precomputedIndex.byCode.get(prodCode) : undefined) ||
+      (prodName ? precomputedIndex.byName.get(prodName) : undefined);
+
+    if (match) {
+      totalIn = match.totalIn;
+      totalOut = match.totalOut;
+      totalReturIn = match.totalReturIn;
+      totalReturOut = match.totalReturOut;
+      hasTransactions = match.hasTransactions;
+    }
+  } else if (Array.isArray(transactions) && transactions.length > 0) {
+    for (let i = 0; i < transactions.length; i++) {
+      const t = transactions[i];
+      const matchId = prodId && t.productId && t.productId === prodId;
       const matchCode = prodCode && t.productCode && t.productCode.trim().toLowerCase() === prodCode;
       const matchName = prodName && t.productName && t.productName.trim().toLowerCase() === prodName;
 
@@ -95,8 +164,12 @@ export function getProductStockSummary(
 /**
  * Gets just the current real physical stock number
  */
-export function getRealStock(product: Product, transactions: Transaction[] = []): number {
-  return getProductStockSummary(product, transactions).currentStock;
+export function getRealStock(
+  product: Product,
+  transactions: Transaction[] = [],
+  precomputedIndex?: ReturnType<typeof buildTransactionIndex>
+): number {
+  return getProductStockSummary(product, transactions, precomputedIndex).currentStock;
 }
 
 /**
@@ -104,17 +177,20 @@ export function getRealStock(product: Product, transactions: Transaction[] = [])
  */
 export function getProductStockHealth(
   product: Product,
-  transactions: Transaction[] = []
+  transactions: Transaction[] = [],
+  precomputedIndex?: ReturnType<typeof buildTransactionIndex>
 ): StockHealthStatus {
-  return getProductStockSummary(product, transactions).health;
+  return getProductStockSummary(product, transactions, precomputedIndex).health;
 }
 
 /**
- * Calculates global inventory metrics across all products and transactions
+ * Calculates global inventory metrics across all products and transactions.
+ * Uses single-pass O(N + M) aggregation for maximum performance and minimum battery/CPU usage.
  */
 export function calculateInventoryMetrics(
   products: Product[],
-  transactions: Transaction[] = []
+  transactions: Transaction[] = [],
+  precomputedIndex?: ReturnType<typeof buildTransactionIndex>
 ) {
   let totalStock = 0;
   let totalHealthy = 0;
@@ -122,8 +198,12 @@ export function calculateInventoryMetrics(
   let totalOut = 0;
   const criticalProducts: Product[] = [];
 
+  // Use precomputed index or build index once in O(M)
+  const index = precomputedIndex || buildTransactionIndex(transactions);
+
+  // Single-pass calculation in O(N)
   const summaries = (products || []).map((p) => {
-    const summary = getProductStockSummary(p, transactions);
+    const summary = getProductStockSummary(p, transactions, index);
     totalStock += summary.currentStock;
 
     if (summary.health === 'Habis') {
@@ -139,27 +219,32 @@ export function calculateInventoryMetrics(
     return summary;
   });
 
-  const totalIn = (transactions || [])
-    .filter((t) => t.type === 'IN')
-    .reduce((acc, t) => acc + (Number(t.quantity) || 0), 0);
+  let totalIn = 0;
+  let totalOutUnits = 0;
+  let totalReturInUnits = 0;
+  let totalReturOutUnits = 0;
+  let totalReturTransactions = 0;
 
-  const totalOutUnits = (transactions || [])
-    .filter((t) => t.type === 'OUT')
-    .reduce((acc, t) => acc + (Number(t.quantity) || 0), 0);
-
-  const totalReturInUnits = (transactions || [])
-    .filter((t) => t.type === 'RETUR_IN')
-    .reduce((acc, t) => acc + (Number(t.quantity) || 0), 0);
-
-  const totalReturOutUnits = (transactions || [])
-    .filter((t) => t.type === 'RETUR_OUT')
-    .reduce((acc, t) => acc + (Number(t.quantity) || 0), 0);
-
-  const totalReturTransactions = (transactions || [])
-    .filter((t) => t.type === 'RETUR_IN' || t.type === 'RETUR_OUT').length;
+  if (Array.isArray(transactions)) {
+    for (let i = 0; i < transactions.length; i++) {
+      const t = transactions[i];
+      const qty = Number(t.quantity) || 0;
+      if (t.type === 'IN') {
+        totalIn += qty;
+      } else if (t.type === 'OUT') {
+        totalOutUnits += qty;
+      } else if (t.type === 'RETUR_IN') {
+        totalReturInUnits += qty;
+        totalReturTransactions++;
+      } else if (t.type === 'RETUR_OUT') {
+        totalReturOutUnits += qty;
+        totalReturTransactions++;
+      }
+    }
+  }
 
   return {
-    totalProducts: products.length,
+    totalProducts: products ? products.length : 0,
     totalStock,
     totalHealthy,
     totalLow,

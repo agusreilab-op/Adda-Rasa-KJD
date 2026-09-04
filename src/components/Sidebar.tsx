@@ -40,23 +40,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <aside
         id="sidebar"
-        className={`fixed md:relative inset-y-0 left-0 z-50 md:z-10 w-[260px] h-screen md:h-full shrink-0 border-r border-[#c4c5d5]/50 bg-[#fbf8ff] flex flex-col py-5 px-4 transition-transform md:transition-none duration-200 ease-in-out shadow-lg md:shadow-none ${
+        className={`fixed md:relative inset-y-0 left-0 z-50 md:z-10 w-[280px] max-w-[85vw] md:w-56 lg:w-64 h-screen md:h-full shrink-0 border-r border-[#c4c5d5]/50 bg-[#fbf8ff] flex flex-col py-4 md:py-5 px-3 md:px-4 transition-transform md:transition-none duration-200 ease-in-out shadow-xl md:shadow-none ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
         {/* Mobile close button */}
         <button
           onClick={onCloseMobile}
-          className="md:hidden absolute top-4 right-4 p-1.5 text-[#444653] hover:bg-[#e8e7f1] rounded-lg transition-colors"
+          className="md:hidden absolute top-3.5 right-3.5 p-2 text-[#444653] hover:bg-[#e8e7f1] rounded-xl transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center cursor-pointer"
           title="Tutup Menu"
           aria-label="Tutup Menu"
         >
-          <span className="material-symbols-outlined text-[20px]">close</span>
+          <span className="material-symbols-outlined text-[22px]">close</span>
         </button>
 
         {/* Brand Header */}
-        <div className="mb-6 px-2 text-center flex flex-col items-center">
-          <div className="w-16 h-20 mb-2 flex items-center justify-center p-0.5">
+        <div className="mb-4 md:mb-6 px-2 text-center flex flex-col items-center">
+          <div className="w-14 h-16 md:w-16 md:h-20 mb-1.5 flex items-center justify-center p-0.5">
             <img
               src={APP_LOGO_URL}
               alt="ADDA RASA Logo"
@@ -64,16 +64,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               referrerPolicy="no-referrer"
             />
           </div>
-          <h1 className="font-bold text-[18px] text-[#00288e] tracking-tight leading-tight">
+          <h1 className="font-bold text-[17px] md:text-[18px] text-[#00288e] tracking-tight leading-tight">
             ADDA RASA KJD
           </h1>
-          <p className="text-[11px] font-semibold text-[#444653] uppercase tracking-widest mt-0.5">
+          <p className="text-[10px] md:text-[11px] font-semibold text-[#444653] uppercase tracking-widest mt-0.5">
             Inventory System
           </p>
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="flex-1 space-y-1.5 font-medium text-[14px] overflow-y-auto">
+        <nav className="flex-1 space-y-1 font-medium text-[13.5px] md:text-[14px] overflow-y-auto pr-0.5">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -84,13 +84,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onTabChange(item.id);
                   onCloseMobile();
                 }}
-                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all text-left group ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 min-h-[44px] rounded-xl transition-all text-left group cursor-pointer ${
                   isActive
                     ? 'text-[#00288e] font-bold bg-[#00288e]/10 shadow-xs'
                     : 'text-[#444653] hover:bg-[#e8e7f1] hover:text-[#1a1b22]'
                 }`}
               >
-                <div className="flex items-center gap-3.5 min-w-0">
+                <div className="flex items-center gap-3 min-w-0">
                   <span
                     className={`material-symbols-outlined text-[22px] transition-transform group-hover:scale-105 shrink-0 ${
                       isActive ? 'fill text-[#00288e]' : 'text-[#757684]'
@@ -111,14 +111,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
 
         {/* Bottom Setting Action */}
-        <div className="mt-auto pt-3 border-t border-[#c4c5d5]/40 space-y-1">
+        <div className="mt-auto pt-2.5 border-t border-[#c4c5d5]/40 space-y-1">
           <button
             id="nav-item-setting"
             onClick={() => {
               onTabChange('setting');
               onCloseMobile();
             }}
-            className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition-all text-left ${
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 min-h-[44px] rounded-xl transition-all text-left cursor-pointer ${
               activeTab === 'setting' || activeTab === 'pengaturan'
                 ? 'text-[#00288e] font-bold bg-[#00288e]/10 shadow-xs'
                 : 'text-[#444653] hover:bg-[#e8e7f1] hover:text-[#1a1b22]'
@@ -133,7 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               settings
             </span>
-            <span>Pengaturan</span>
+            <span className="truncate">Pengaturan</span>
           </button>
 
           {onLogout && (
@@ -142,7 +142,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onCloseMobile();
                 onLogout();
               }}
-              className="w-full flex items-center gap-3.5 px-4 py-2 rounded-xl text-[13px] text-[#ba1a1a] hover:bg-[#ffdad6]/40 transition-colors text-left font-medium"
+              className="w-full flex items-center gap-3 px-3.5 py-2 min-h-[40px] rounded-xl text-[13px] text-[#ba1a1a] hover:bg-[#ffdad6]/40 transition-colors text-left font-medium cursor-pointer"
             >
               <span className="material-symbols-outlined text-[20px] text-[#ba1a1a]">
                 logout

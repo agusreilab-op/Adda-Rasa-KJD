@@ -331,7 +331,123 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Cards List (Touch-Friendly for Phones & Small Tablets) */}
+        <div className="block md:hidden divide-y divide-[#c4c5d5]/30">
+          {filteredTransactions.length === 0 ? (
+            <div className="p-8 text-center text-[#757684]">
+              <span className="material-symbols-outlined text-[32px] text-[#c4c5d5]">receipt_long</span>
+              <p className="font-medium text-[13px] mt-1">Belum ada riwayat transaksi atau filter tidak cocok.</p>
+            </div>
+          ) : (
+            filteredTransactions.map((t) => {
+              const isIncoming = t.type === 'IN' || t.type === 'RETUR_IN';
+
+              return (
+                <div key={t.id} className="p-4 hover:bg-[#f4f2fc]/40 transition-colors">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[12px] font-bold text-[#00288e] bg-[#dde1ff]/60 px-2 py-0.5 rounded">
+                        {t.code}
+                      </span>
+                      <span className="text-[11px] text-[#757684]">{t.date}</span>
+                    </div>
+
+                    {onDeleteTransaction && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(`Hapus transaksi ${t.code} (${t.productName})?`)) {
+                            onDeleteTransaction(t.id);
+                          }
+                        }}
+                        className="p-1 text-[#ba1a1a] hover:bg-[#ffdad6]/60 rounded-md transition-colors"
+                        title="Hapus Transaksi"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <h4 className="font-bold text-[15px] text-[#1a1b22] leading-tight">
+                        {t.productName}
+                      </h4>
+                      <span className="font-mono text-[11px] text-[#757684]">{t.productCode}</span>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`text-[16px] font-extrabold font-mono ${
+                          t.type === 'IN'
+                            ? 'text-[#006c49]'
+                            : t.type === 'RETUR_IN'
+                            ? 'text-[#006874]'
+                            : t.type === 'RETUR_OUT'
+                            ? 'text-[#ba1a1a]'
+                            : 'text-[#00288e]'
+                        }`}
+                      >
+                        {isIncoming ? '+' : '-'}{t.quantity} {t.unit}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#c4c5d5]/25 text-[12px]">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {t.type === 'IN' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#6cf8bb]/20 text-[#00714d] border border-[#6cf8bb]/40">
+                          <span className="material-symbols-outlined text-[12px]">arrow_downward</span>
+                          MASUK
+                        </span>
+                      )}
+                      {t.type === 'OUT' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#dde1ff] text-[#00288e] border border-[#00288e]/20">
+                          <span className="material-symbols-outlined text-[12px]">point_of_sale</span>
+                          PENJUALAN
+                        </span>
+                      )}
+                      {t.type === 'RETUR_IN' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#006874]/15 text-[#006874] border border-[#006874]/30">
+                          <span className="material-symbols-outlined text-[12px]">assignment_return</span>
+                          RETUR MASUK
+                        </span>
+                      )}
+                      {t.type === 'RETUR_OUT' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#ffdad6] text-[#93000a] border border-[#ffdad6]">
+                          <span className="material-symbols-outlined text-[12px]">reply_all</span>
+                          RETUR SUPPLIER
+                        </span>
+                      )}
+                      <span className="text-[#444653] font-medium truncate max-w-[180px]">
+                        {t.sourceDestination}
+                      </span>
+                    </div>
+
+                    <span className="text-[11px] text-[#757684] shrink-0">
+                      Oleh: {t.createdBy}
+                    </span>
+                  </div>
+
+                  {(t.returnReason || t.notes) && (
+                    <div className="mt-2 text-[11px] text-[#757684] bg-[#f4f2fc]/60 rounded-lg p-2">
+                      {t.returnReason && (
+                        <div className="font-semibold text-[#93000a] flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[13px] text-[#ba1a1a]">report_problem</span>
+                          <span>{t.returnReason}</span>
+                        </div>
+                      )}
+                      {t.notes && <div>{t.notes}</div>}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Table View (Hidden on mobile) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-[#c4c5d5]/30">
             <thead className="bg-[#eeedf7]/50">
               <tr>

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Product, Transaction } from '../types';
 import {
   calculateInventoryMetrics,
   getProductStockSummary,
-  getRealStock,
+  buildTransactionIndex,
 } from '../utils/stockCalculator';
 import { ResetStockModal } from './ResetStockModal';
 
@@ -32,6 +32,9 @@ export const StockView: React.FC<StockViewProps> = ({
   const [tempStockValue, setTempStockValue] = useState<number>(0);
   const [isResetStockModalOpen, setIsResetStockModalOpen] = useState(false);
 
+  // Pre-aggregate transaction lookups for maximum performance on mobile & tablets
+  const txIndex = useMemo(() => buildTransactionIndex(transactions), [transactions]);
+
   const {
     totalStock: totalStockUnits,
     totalHealthy,
@@ -39,18 +42,23 @@ export const StockView: React.FC<StockViewProps> = ({
     totalOut,
     totalIn,
     totalOutUnits,
-  } = calculateInventoryMetrics(products, transactions);
+  } = useMemo(
+    () => calculateInventoryMetrics(products, transactions, txIndex),
+    [products, transactions, txIndex]
+  );
 
-  const filteredProducts = products.filter((p) => {
-    const summary = getProductStockSummary(p, transactions);
-    const matchesHealth = filterHealth === 'All' || summary.health === filterHealth;
-    const matchesSearch =
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesHealth && matchesSearch;
-  });
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const summary = getProductStockSummary(p, transactions, txIndex);
+      const matchesHealth = filterHealth === 'All' || summary.health === filterHealth;
+      const matchesSearch =
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.category.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesHealth && matchesSearch;
+    });
+  }, [products, transactions, txIndex, filterHealth, searchTerm]);
 
   const handleSaveStock = (productId: string) => {
     onUpdateStock(productId, Math.max(0, tempStockValue));
@@ -253,7 +261,164 @@ export const StockView: React.FC<StockViewProps> = ({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Cards List (Touch-Friendly for HP / Phone & Small Tablets) */}
+        <div className="block md:hidden divide-y divide-[#c4c5d5]/30">
+          {filteredProducts.length === 0 ? (
+            <div className="p-8 text-center text-[#757684]">
+              <span className="material-symbols-outlined text-[32px] text-[#c4c5d5]">inventory_2</span>
+              <p className="font-medium text-[13px] mt-1">Belum ada data barang atau tidak cocok dengan pencarian.</p>
+            </div>
+          ) : (
+            filteredProducts.map((p) => {
+              const summary = getProductStockSummary(p, transactions, txIndex);
+              const isEditing = editingStockId === p.id;
+
+              return (
+                <div key={p.id} className="p-4 hover:bg-[#f4f2fc]/40 transition-colors">
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-mono text-[12px] font-bold text-[#00288e] bg-[#dde1ff]/60 px-2 py-0.5 rounded">
+                        {p.code}
+                      </span>
+                      <span className="text-[11px] font-medium text-[#444653] bg-[#eeedf7] px-2 py-0.5 rounded">
+                        {p.category}
+                      </span>
+                    </div>
+
+                    {summary.health === 'Aman' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#6cf8bb]/20 text-[#00714d] border border-[#6cf8bb]/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#006c49]" />
+                        Aman
+                      </span>
+                    )}
+                    {summary.health === 'Menipis' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#6b4200]/10 text-[#4c2e00] border border-[#6b4200]/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
+                        Menipis
+                      </span>
+                    )}
+                    {summary.health === 'Habis' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#ffdad6]/60 text-[#93000a] border border-[#ffdad6]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ba1a1a]" />
+                        Habis
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="font-bold text-[15px] text-[#1a1b22] leading-tight mb-1">
+                    {p.name}
+                  </h3>
+                  <div className="text-[12px] text-[#757684] mb-2.5">
+                    Supplier: <strong className="text-[#444653]">{p.supplier || 'Umum'}</strong> • Min: {p.minStock} {p.unit}
+                  </div>
+
+                  {/* Stock Counts Strip */}
+                  <div className="bg-[#f4f2fc]/70 rounded-xl p-2.5 mb-3 flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider font-bold text-[#757684]">Stok Fisik Real</div>
+                      <div className="text-[18px] font-extrabold font-mono text-[#00288e] leading-tight">
+                        {isEditing ? (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <input
+                              type="number"
+                              min="0"
+                              value={tempStockValue}
+                              onChange={(e) => setTempStockValue(Number(e.target.value))}
+                              className="w-20 px-2 py-1 border border-[#00288e] rounded text-right text-[14px] font-mono focus:outline-none bg-white"
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSaveStock(p.id)}
+                              className="px-2.5 py-1 bg-[#00288e] text-white text-[11px] font-bold rounded"
+                            >
+                              Simpan
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingStockId(null)}
+                              className="px-2 py-1 border border-[#c4c5d5] text-[11px] rounded"
+                            >
+                              Batal
+                            </button>
+                          </div>
+                        ) : (
+                          <span
+                            className={
+                              summary.health === 'Habis'
+                                ? 'text-[#ba1a1a]'
+                                : summary.health === 'Menipis'
+                                ? 'text-[#4c2e00]'
+                                : 'text-[#00288e]'
+                            }
+                          >
+                            {summary.currentStock} <span className="text-[13px] font-medium text-[#444653]">{p.unit}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="text-right text-[11px] space-y-0.5">
+                      <div className="text-[#757684]">Awal: <span className="font-mono font-medium">{summary.initialStock}</span></div>
+                      <div className="text-[#006c49] font-medium">In: <span className="font-mono">+{summary.totalIn}</span></div>
+                      <div className="text-[#ba1a1a] font-medium">Out: <span className="font-mono">-{summary.totalOut}</span></div>
+                    </div>
+                  </div>
+
+                  {/* Actions Bar */}
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    {(summary.health === 'Menipis' || summary.health === 'Habis') && onOpenCriticalMessageModal ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenCriticalMessageModal(p.supplier)}
+                        className="px-3 py-1.5 rounded-lg bg-[#ba1a1a]/10 text-[#ba1a1a] text-[11px] font-bold flex items-center gap-1 hover:bg-[#ba1a1a] hover:text-white transition-colors cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">chat</span>
+                        <span>Pesan Supplier</span>
+                      </button>
+                    ) : (
+                      <div />
+                    )}
+
+                    {!isEditing && (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => onUpdateStock(p.id, Math.max(0, summary.currentStock - 1))}
+                          className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#c4c5d5] bg-white text-[#ba1a1a] font-bold text-base active:bg-[#ffdad6]/40 cursor-pointer"
+                          title="Kurangi 1"
+                        >
+                          -
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingStockId(p.id);
+                            setTempStockValue(summary.currentStock);
+                          }}
+                          className="px-3 py-1.5 bg-[#00288e]/10 text-[#00288e] text-[12px] font-bold rounded-lg hover:bg-[#00288e] hover:text-white transition-colors cursor-pointer"
+                        >
+                          Opname
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onUpdateStock(p.id, summary.currentStock + 1)}
+                          className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#c4c5d5] bg-white text-[#006c49] font-bold text-base active:bg-[#6cf8bb]/20 cursor-pointer"
+                          title="Tambah 1"
+                        >
+                          +
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Table View (Hidden on mobile md:) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-[#c4c5d5]/30">
             <thead className="bg-[#eeedf7]/50">
               <tr>
@@ -299,7 +464,7 @@ export const StockView: React.FC<StockViewProps> = ({
                 </tr>
               ) : (
                 filteredProducts.map((p) => {
-                  const summary = getProductStockSummary(p, transactions);
+                  const summary = getProductStockSummary(p, transactions, txIndex);
                   const isEditing = editingStockId === p.id;
 
                   return (

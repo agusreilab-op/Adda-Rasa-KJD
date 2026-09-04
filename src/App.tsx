@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   NavigationTab,
   Product,
@@ -38,6 +38,7 @@ import {
 // Component Views
 import { Sidebar } from './components/Sidebar';
 import { TopNavbar } from './components/TopNavbar';
+import { BottomNavbar } from './components/BottomNavbar';
 import { LoginScreen } from './components/LoginScreen';
 import { DashboardView } from './components/DashboardView';
 import { ProductsView } from './components/ProductsView';
@@ -51,6 +52,7 @@ import {
   calculateInventoryMetrics,
   getProductStockSummary,
   getRealStock,
+  buildTransactionIndex,
 } from './utils/stockCalculator';
 
 // Modals
@@ -630,11 +632,16 @@ export const App: React.FC = () => {
     supplier: string;
   } | null>(null);
 
+  // Pre-aggregated transaction index for high-performance stock metrics
+  const txIndex = useMemo(() => buildTransactionIndex(transactions), [transactions]);
+
   // Notifications count (low & out of stock items based on accurate real stock)
-  const lowStockCount = products.filter((p) => {
-    const summary = getProductStockSummary(p, transactions);
-    return summary.health === 'Habis' || summary.health === 'Menipis';
-  }).length;
+  const lowStockCount = useMemo(() => {
+    return products.filter((p) => {
+      const summary = getProductStockSummary(p, transactions, txIndex);
+      return summary.health === 'Habis' || summary.health === 'Menipis';
+    }).length;
+  }, [products, transactions, txIndex]);
 
   // Authentication Handlers
   const handleLogin = ({ username, password }: { username: string; password?: string }) => {
@@ -1130,7 +1137,7 @@ export const App: React.FC = () => {
         )}
 
         {/* Scrollable View Area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-[#fbf8ff]">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-[#fbf8ff] pb-24 md:pb-6">
           {activeTab === 'dashboard' && (
             <DashboardView
               products={products}
@@ -1233,6 +1240,17 @@ export const App: React.FC = () => {
             />
           )}
         </main>
+
+        {/* Mobile & Tablet Bottom Navigation Bar */}
+        <BottomNavbar
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            setMobileSidebarOpen(false);
+          }}
+          onOpenMobileMenu={() => setMobileSidebarOpen(true)}
+          lowStockCount={lowStockCount}
+        />
       </div>
 
       {/* Global Action Modals */}

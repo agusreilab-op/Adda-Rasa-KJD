@@ -113,17 +113,17 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-2.5 w-full md:w-auto flex-wrap">
           {/* Reset / Hapus Semua Produk Button */}
           <button
             id="btn-reset-produk"
             type="button"
             onClick={() => setIsResetModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 border border-[#ba1a1a]/40 bg-[#fff8f7] text-[#ba1a1a] hover:bg-[#ffdad6] rounded-xl transition-colors text-[12px] font-bold cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 border border-[#ba1a1a]/40 bg-[#fff8f7] text-[#ba1a1a] hover:bg-[#ffdad6] rounded-xl transition-colors text-[12px] font-bold cursor-pointer"
             title="Reset atau Hapus Semua Data Produk"
           >
             <span className="material-symbols-outlined text-[18px]">restart_alt</span>
-            <span>Reset / Hapus Produk</span>
+            <span className="whitespace-nowrap">Reset / Hapus</span>
           </button>
 
           <button
@@ -133,38 +133,38 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
               downloadProductExcelTemplate();
               showNotification('Template Excel produk berhasil diunduh.');
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 border border-[#00288e]/30 bg-[#dde1ff]/30 text-[#00288e] hover:bg-[#dde1ff]/60 rounded-xl transition-colors text-[12px] font-bold cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 border border-[#00288e]/30 bg-[#dde1ff]/30 text-[#00288e] hover:bg-[#dde1ff]/60 rounded-xl transition-colors text-[12px] font-bold cursor-pointer"
             title="Download Template Excel untuk Import Produk"
           >
             <span className="material-symbols-outlined text-[18px]">table_chart</span>
-            <span>Download Template</span>
+            <span className="whitespace-nowrap">Template</span>
           </button>
 
           <button
             id="btn-import-excel"
             onClick={onOpenImportModal}
-            className="flex items-center gap-1.5 px-3.5 py-2 border border-[#c4c5d5] bg-white text-[#1a1b22] rounded-xl hover:bg-[#f4f2fc] transition-colors text-[12px] font-semibold cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 border border-[#c4c5d5] bg-white text-[#1a1b22] rounded-xl hover:bg-[#f4f2fc] transition-colors text-[12px] font-semibold cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">upload</span>
-            <span>Import Excel</span>
+            <span className="whitespace-nowrap">Import</span>
           </button>
 
           <button
             id="btn-export-excel"
             onClick={onExportExcel}
-            className="flex items-center gap-1.5 px-3.5 py-2 border border-[#c4c5d5] bg-white text-[#1a1b22] rounded-xl hover:bg-[#f4f2fc] transition-colors text-[12px] font-semibold cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 border border-[#c4c5d5] bg-white text-[#1a1b22] rounded-xl hover:bg-[#f4f2fc] transition-colors text-[12px] font-semibold cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">download</span>
-            <span>Export Excel</span>
+            <span className="whitespace-nowrap">Export</span>
           </button>
 
           <button
             id="btn-tambah-produk"
             onClick={onOpenAddModal}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#00288e] text-white rounded-xl hover:bg-[#1e40af] active:ring-2 active:ring-[#00288e]/50 transition-all text-[12px] font-semibold shadow-xs cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00288e] text-white rounded-xl hover:bg-[#1e40af] active:ring-2 active:ring-[#00288e]/50 transition-all text-[12px] font-semibold shadow-xs cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
-            <span>Tambah Produk</span>
+            <span className="whitespace-nowrap">Tambah Produk</span>
           </button>
         </div>
       </div>
@@ -283,9 +283,117 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
         </div>
       </div>
 
-      {/* Data Table Card */}
+      {/* Data Display: Desktop Table & Mobile Cards */}
       <div className="bg-white rounded-[24px] ambient-shadow border border-[#c4c5d5]/30 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile Card List (Hidden on tablet/desktop md:) */}
+        <div className="block md:hidden divide-y divide-[#c4c5d5]/30">
+          {products.length === 0 ? (
+            <div className="p-8 text-center text-[#757684]">
+              <div className="w-14 h-14 rounded-full bg-[#eeedf7] flex items-center justify-center text-[#757684] mx-auto mb-3">
+                <span className="material-symbols-outlined text-[32px]">inventory_2</span>
+              </div>
+              <h4 className="font-bold text-[15px] text-[#1a1b22]">Katalog Produk Kosong</h4>
+              <p className="text-[12px] text-[#444653] mt-1 mb-4">
+                Belum ada data produk atau semua produk telah di-reset.
+              </p>
+              <button
+                type="button"
+                onClick={onOpenAddModal}
+                className="w-full py-2.5 bg-[#00288e] text-white rounded-xl text-[13px] font-semibold"
+              >
+                + Tambah Produk Baru
+              </button>
+            </div>
+          ) : currentProducts.length === 0 ? (
+            <div className="p-8 text-center text-[#757684]">
+              <span className="material-symbols-outlined text-[32px] text-[#c4c5d5]">search_off</span>
+              <p className="font-medium text-[13px] mt-1">Tidak ada produk sesuai filter</p>
+              <button
+                type="button"
+                onClick={handleResetFiltersOnly}
+                className="mt-2 text-[12px] font-semibold text-[#00288e] hover:underline"
+              >
+                Reset Filter Pencarian
+              </button>
+            </div>
+          ) : (
+            currentProducts.map((p) => {
+              const isActive = p.status === 'Aktif';
+              return (
+                <div key={p.id} className="p-4 hover:bg-[#f4f2fc]/40 transition-colors">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-mono text-[12px] font-bold text-[#00288e] bg-[#dde1ff]/60 px-2 py-0.5 rounded">
+                        {p.code}
+                      </span>
+                      <span className="text-[11px] font-medium text-[#444653] bg-[#eeedf7] px-2 py-0.5 rounded">
+                        {p.category}
+                      </span>
+                    </div>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        isActive
+                          ? 'bg-[#6cf8bb]/20 text-[#00714d] border-[#6cf8bb]/30'
+                          : 'bg-[#ffdad6]/40 text-[#ba1a1a] border-[#ffdad6]'
+                      }`}
+                    >
+                      {p.status}
+                    </span>
+                  </div>
+
+                  <h3 className="font-bold text-[15px] text-[#1a1b22] leading-tight mb-1">
+                    {p.name}
+                  </h3>
+
+                  <div className="text-[12px] text-[#444653] flex items-center gap-2 mb-3">
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px] text-[#757684]">local_shipping</span>
+                      {p.supplier || 'Umum'}
+                    </span>
+                    <span>•</span>
+                    <span>Satuan: <strong>{p.unit}</strong></span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2.5 border-t border-[#c4c5d5]/25">
+                    <div>
+                      <div className="text-[11px] text-[#757684]">Harga & Stok Awal</div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-mono font-bold text-[14px] text-[#00288e]">
+                          {formatRupiah(p.price)}
+                        </span>
+                        <span className="text-[11px] font-semibold text-[#444653]">
+                          ({p.initialStock ?? p.currentStock ?? 0} {p.unit})
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => onOpenEditModal(p)}
+                        className="px-3 py-1.5 rounded-lg bg-[#00288e]/10 text-[#00288e] font-semibold text-[12px] flex items-center gap-1 hover:bg-[#00288e] hover:text-white transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">edit</span>
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteProduct(p)}
+                        className="p-1.5 rounded-lg bg-[#ffdad6]/60 text-[#ba1a1a] hover:bg-[#ba1a1a] hover:text-white transition-colors"
+                        title="Hapus Produk"
+                      >
+                        <span className="material-symbols-outlined text-[17px]">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Table View (Hidden on mobile) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-[#c4c5d5]/40">
             <thead className="bg-[#eeedf7]/50">
               <tr>

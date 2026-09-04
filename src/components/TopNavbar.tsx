@@ -141,29 +141,53 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       </div>
 
       {/* Right side: Quick Info, Notifications & User Avatar */}
-      <div className="flex items-center gap-2 md:gap-3 shrink-0 relative">
+      <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0 relative">
         {/* Google Sheets Realtime Sync Button */}
         {onOpenGoogleSheetsModal && (
-          <button
-            id="btn-google-sheets-sync"
-            type="button"
-            onClick={onOpenGoogleSheetsModal}
-            className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all border cursor-pointer ${
-              syncState?.isConnected
-                ? 'bg-[#6cf8bb]/15 text-[#00714d] border-[#6cf8bb]/40 hover:bg-[#6cf8bb]/25'
-                : 'bg-[#f4f2fc] text-[#444653] border-[#c4c5d5]/50 hover:bg-[#eeedf7]'
-            }`}
-            title="Sinkronisasi Google Spreadsheet Realtime"
-          >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z" />
-              <path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h7v2H7z" />
-            </svg>
-            <span>{syncState?.isConnected ? 'Sheets Sync: Aktif' : 'Hubungkan Sheets'}</span>
-            {syncState?.isSyncing && (
-              <span className="w-2 h-2 rounded-full bg-[#00288e] animate-ping" />
-            )}
-          </button>
+          <>
+            {/* Mobile Icon Button */}
+            <button
+              id="btn-google-sheets-sync-mobile"
+              type="button"
+              onClick={onOpenGoogleSheetsModal}
+              className={`sm:hidden p-2 rounded-full text-[12px] font-semibold transition-all border cursor-pointer relative ${
+                syncState?.isConnected
+                  ? 'bg-[#6cf8bb]/20 text-[#00714d] border-[#6cf8bb]/50'
+                  : 'bg-[#f4f2fc] text-[#444653] border-[#c4c5d5]/50'
+              }`}
+              title={syncState?.isConnected ? 'Google Sheets Terhubung' : 'Hubungkan Google Sheets'}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z" />
+                <path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h7v2H7z" />
+              </svg>
+              {syncState?.isConnected && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#006c49]" />
+              )}
+            </button>
+
+            {/* Desktop / Tablet Pill */}
+            <button
+              id="btn-google-sheets-sync"
+              type="button"
+              onClick={onOpenGoogleSheetsModal}
+              className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all border cursor-pointer ${
+                syncState?.isConnected
+                  ? 'bg-[#6cf8bb]/15 text-[#00714d] border-[#6cf8bb]/40 hover:bg-[#6cf8bb]/25'
+                  : 'bg-[#f4f2fc] text-[#444653] border-[#c4c5d5]/50 hover:bg-[#eeedf7]'
+              }`}
+              title="Sinkronisasi Google Spreadsheet Realtime"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z" />
+                <path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h7v2H7z" />
+              </svg>
+              <span>{syncState?.isConnected ? 'Sheets Sync: Aktif' : 'Hubungkan Sheets'}</span>
+              {syncState?.isSyncing && (
+                <span className="w-2 h-2 rounded-full bg-[#00288e] animate-ping" />
+              )}
+            </button>
+          </>
         )}
 
         {/* Notifications Button */}
@@ -171,7 +195,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           <button
             id="btn-notifications"
             onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 text-[#444653] hover:bg-[#e8e7f1] rounded-full transition-colors relative"
+            className="p-2 text-[#444653] hover:bg-[#e8e7f1] rounded-full transition-colors relative min-w-[38px] min-h-[38px] flex items-center justify-center cursor-pointer"
             title="Notifikasi"
           >
             <span className="material-symbols-outlined text-[22px]">notifications</span>
@@ -184,7 +208,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           {showNotifications && (
             <div
               id="notifications-dropdown"
-              className="absolute right-0 mt-2 w-80 sm:w-96 bg-[#ffffff] rounded-xl shadow-lg border border-[#c4c5d5]/40 py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+              className="absolute right-0 sm:right-0 mt-2 w-[calc(100vw-28px)] max-w-sm sm:w-96 bg-[#ffffff] rounded-2xl shadow-xl border border-[#c4c5d5]/50 py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
             >
               <div className="px-4 pb-2 border-b border-[#c4c5d5]/30 flex justify-between items-center">
                 <div>
@@ -252,9 +276,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           <button
             id="btn-user-profile"
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-2 rounded-full p-0.5 border-2 border-[#c4c5d5] hover:border-[#00288e] transition-all focus:outline-none focus:ring-2 focus:ring-[#00288e]/30"
+            className="flex items-center gap-2 rounded-full p-0.5 border-2 border-[#c4c5d5] hover:border-[#00288e] transition-all focus:outline-none focus:ring-2 focus:ring-[#00288e]/30 cursor-pointer min-w-[36px] min-h-[36px]"
           >
-            <div className="w-9 h-9 rounded-full overflow-hidden bg-[#dde1ff] flex items-center justify-center text-[#00288e] font-bold text-sm">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-[#dde1ff] flex items-center justify-center text-[#00288e] font-bold text-xs sm:text-sm">
               {user.avatar ? (
                 <img
                   src={user.avatar}
@@ -272,7 +296,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           {showProfileMenu && (
             <div
               id="profile-dropdown"
-              className="absolute right-0 mt-2 w-64 bg-[#ffffff] rounded-xl shadow-lg border border-[#c4c5d5]/40 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+              className="absolute right-0 mt-2 w-[calc(100vw-32px)] max-w-xs sm:w-64 bg-[#ffffff] rounded-2xl shadow-xl border border-[#c4c5d5]/50 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
             >
               <div className="px-4 py-3 border-b border-[#c4c5d5]/30">
                 <p className="font-semibold text-[14px] text-[#1a1b22]">{user.name}</p>

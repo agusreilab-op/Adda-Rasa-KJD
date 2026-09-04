@@ -1,6 +1,6 @@
 {
-  "name": "Remix Remix Remix adda-rasa-kjd",
-  "description": "Imported from GitHub: healthoraplus-rgb/adda-rasa-kjd",
+  "name": "ADDA RASA KJD - Inventory System",
+  "description": "Sistem Manajemen Inventaris, Stok Realtime, dan Transaksi Gudang ADDA RASA KJD yang responsif untuk HP, tablet, dan desktop.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
