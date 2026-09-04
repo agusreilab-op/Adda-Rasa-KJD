@@ -40,8 +40,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <aside
         id="sidebar"
-        className={`fixed md:relative inset-y-0 left-0 z-50 md:z-10 w-[280px] max-w-[85vw] md:w-56 lg:w-64 h-screen md:h-full shrink-0 border-r border-[#c4c5d5]/50 bg-[#fbf8ff] flex flex-col py-4 md:py-5 px-3 md:px-4 transition-transform md:transition-none duration-200 ease-in-out shadow-xl md:shadow-none ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        className={`fixed md:relative inset-y-0 left-0 z-50 md:z-10 w-[280px] max-w-[85vw] md:w-56 lg:w-64 h-screen h-[100dvh] md:h-full shrink-0 border-r border-[#c4c5d5]/50 bg-[#fbf8ff] flex flex-col py-4 md:py-5 px-3 md:px-4 transition-transform md:transition-none duration-200 ease-in-out shadow-xl md:shadow-none ${
+          isMobileOpen
+            ? 'translate-x-0 pointer-events-auto visible'
+            : '-translate-x-full md:translate-x-0 pointer-events-none md:pointer-events-auto invisible md:visible'
         }`}
       >
         {/* Mobile close button */}

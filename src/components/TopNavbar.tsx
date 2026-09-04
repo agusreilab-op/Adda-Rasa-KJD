@@ -60,7 +60,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   const unreadCount = notificationsList.length;
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
+    function handleClickOutside(e: Event) {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setShowNotifications(false);
       }
@@ -69,7 +69,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const getHeaderTitle = () => {

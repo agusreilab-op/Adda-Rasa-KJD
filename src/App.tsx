@@ -70,8 +70,15 @@ import { GoogleSheetsSyncModal } from './components/GoogleSheetsSyncModal';
 import { SalesExportModal } from './components/SalesExportModal';
 
 export const App: React.FC = () => {
-  // Authentication & Registered Users State (Login screen as initial view)
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Authentication & Registered Users State (Persisted in localStorage so mobile refreshes/scrolls do not kick user out)
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('addarasa_is_logged_in') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   const [users, setUsers] = useState<User[]>(() => {
     try {
       const saved = localStorage.getItem('addarasa_users');
@@ -89,7 +96,32 @@ export const App: React.FC = () => {
     }
   });
 
-  const [user, setUser] = useState<User>(() => users[0] || INITIAL_USER);
+  const [user, setUser] = useState<User>(() => {
+    try {
+      const savedCurrentUser = localStorage.getItem('addarasa_current_user');
+      if (savedCurrentUser) {
+        return JSON.parse(savedCurrentUser);
+      }
+    } catch {
+      // ignore
+    }
+    return INITIAL_USER;
+  });
+
+  // Keep active session saved in localStorage
+  useEffect(() => {
+    try {
+      if (isLoggedIn && user) {
+        localStorage.setItem('addarasa_is_logged_in', 'true');
+        localStorage.setItem('addarasa_current_user', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('addarasa_is_logged_in');
+        localStorage.removeItem('addarasa_current_user');
+      }
+    } catch {
+      // ignore
+    }
+  }, [isLoggedIn, user]);
 
   // Persist users to localStorage
   useEffect(() => {
@@ -703,6 +735,16 @@ export const App: React.FC = () => {
     return { success: true };
   };
 
+  const handleLogout = useCallback(() => {
+    try {
+      localStorage.removeItem('addarasa_is_logged_in');
+      localStorage.removeItem('addarasa_current_user');
+    } catch {
+      // ignore
+    }
+    setIsLoggedIn(false);
+  }, []);
+
   // User Management in Settings
   const handleAddUser = (newUserData: Omit<User, 'id'> | User) => {
     const created: User = {
@@ -1074,7 +1116,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen w-full bg-[#fbf8ff] text-[#1a1b22] overflow-hidden">
+    <div className="flex h-screen h-[100dvh] w-full bg-[#fbf8ff] text-[#1a1b22] overflow-hidden overscroll-none">
       {/* Primary Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -1084,7 +1126,7 @@ export const App: React.FC = () => {
         }}
         isMobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
-        onLogout={() => setIsLoggedIn(false)}
+        onLogout={handleLogout}
         lowStockCount={lowStockCount}
       />
 
@@ -1095,7 +1137,7 @@ export const App: React.FC = () => {
           activeTab={activeTab}
           user={user}
           onToggleMobileMenu={() => setMobileSidebarOpen(true)}
-          onLogout={() => setIsLoggedIn(false)}
+          onLogout={handleLogout}
           onNavigate={(tab) => setActiveTab(tab)}
           searchQuery={globalSearch}
           onSearchChange={setGlobalSearch}
@@ -1137,7 +1179,7 @@ export const App: React.FC = () => {
         )}
 
         {/* Scrollable View Area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-[#fbf8ff] pb-24 md:pb-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-[#fbf8ff] pb-24 md:pb-6 overscroll-contain">
           {activeTab === 'dashboard' && (
             <DashboardView
               products={products}
@@ -1227,7 +1269,7 @@ export const App: React.FC = () => {
               onEditUser={handleEditUser}
               onDeleteUser={handleDeleteUser}
               onToggleUserStatus={handleToggleUserStatus}
-              onLogout={() => setIsLoggedIn(false)}
+              onLogout={handleLogout}
               syncState={syncState}
               onConnectGoogle={handleConnectGoogle}
               onDisconnectGoogle={handleDisconnectGoogle}
